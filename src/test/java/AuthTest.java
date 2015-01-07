@@ -22,9 +22,6 @@ public class AuthTest {
          *                      test,
          *                      strong
          *
-         *
-         *
-         *
          */
 
         int tries = 10; // sha1 = 16773ms, md5 = 174, bcrypt (lukasz123) = 237, bcrypt (test) = 4200, bcrypt (strong)

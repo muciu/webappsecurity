@@ -55,8 +55,8 @@ public class NoteManager {
             }
 
             if (isValid){
-                UUID uid = appendTokenCookie(response);
-                map.put(uid.toString(), username);
+                String uid = appendTokenCookie(response, request);
+                map.put(uid, username);
                 String redir = Optional.ofNullable(request.getParameter("redirect")).orElse("");
                 response.sendRedirect(redir + "?uniqueToken=" + uid);
             }
@@ -82,12 +82,17 @@ public class NoteManager {
         return null;
     }
 
-    public UUID appendTokenCookie(HttpServletResponse respone) {
+    public String appendTokenCookie(HttpServletResponse respone, HttpServletRequest request) {
         UUID uid = UUID.randomUUID();
-        Cookie c = new Cookie("MagicToken", uid.toString());
-//        c.setHttpOnly(true); or c.setPath("; HttpOnly;");
+        String token = uid.toString().replace("-", "");
+//        c.setHttpOnly(true); or c.setPath("; HttpOnly;"); // variant gdy servlet API 2.x
+
+        String userAgent = request.getHeader("User-Agent");
+        token = token + ":" + new PasswdVerification().md5(userAgent).substring(0, 10);
+
+        Cookie c = new Cookie("MagicToken", token);
         respone.addCookie(c);
-        return uid;
+        return token;
     }
 
 }

@@ -51,19 +51,24 @@ public class PasswdVerification {
     }
 
 
-    public String md5(String value) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        MessageDigest digest = MessageDigest.getInstance("MD5");
-        byte[] byts = digest.digest(value.getBytes("UTF-8"));
-
-        BigInteger bi = new BigInteger(1, byts);
-        return String.format("%0" + (byts.length << 1) + "X", bi);
+    public String md5(String value) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("MD5");
+            byte[] byts = digest.digest(value.getBytes("UTF-8"));
+            BigInteger bi = new BigInteger(1, byts);
+            return String.format("%0" + (byts.length << 1) + "X", bi);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     public boolean isValidByMd5(String username, String password) {
         try {
             String passwdHash = mapMD5.get(username);
             return passwdHash != null && passwdHash.equals(md5(password));
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
