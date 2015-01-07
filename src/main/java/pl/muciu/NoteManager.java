@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,20 +34,31 @@ public class NoteManager {
 
     public String getContent() throws IOException {
         return Files.readAllLines(path).stream().reduce("", (a, b) -> a + "<li>" + b + "</li>");
-
     }
 
-    public void processLoginRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public List<String> getLines() throws IOException {
+        return Files.readAllLines(path);
+    }
+
+    public void processLoginRequest(HttpServletRequest request, HttpServletResponse response, String mode) throws IOException {
         if ("POST".equalsIgnoreCase(request.getMethod())) {
             String username = Optional.ofNullable(request.getParameter("username")).orElse("-");
             String passwd = Optional.ofNullable(request.getParameter("password")).orElse("-");
 
             PasswdVerification pv = new PasswdVerification();
-            if (pv.isValidByHash(username, passwd)){
+            boolean isValid = false;
+            switch (mode.toLowerCase()) {
+                case "md5" : isValid = pv.isValidByMd5(username, passwd); break;
+                case "bcrypt" : isValid = pv.isValidByBcrypt(username, passwd); break;
+                case "sha1" : isValid = pv.isValidBySHA1(username, passwd); break;
+                default: throw new RuntimeException("Invalid algorithm");
+            }
+
+            if (isValid){
                 UUID uid = appendTokenCookie(response);
                 map.put(uid.toString(), username);
                 String redir = Optional.ofNullable(request.getParameter("redirect")).orElse("");
-                response.sendRedirect(redir + "?uniqueToken=" + UUID.randomUUID().toString());
+                response.sendRedirect(redir + "?uniqueToken=" + uid);
             }
         }
     }
@@ -59,6 +71,9 @@ public class NoteManager {
     }
 
     public static Cookie getValidTokenCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
         for (Cookie cookie : request.getCookies()) {
             if("MagicToken".equalsIgnoreCase(cookie.getName()) && map.containsKey(cookie.getValue())) {
                 return cookie;
@@ -70,8 +85,9 @@ public class NoteManager {
     public UUID appendTokenCookie(HttpServletResponse respone) {
         UUID uid = UUID.randomUUID();
         Cookie c = new Cookie("MagicToken", uid.toString());
-//        c.setHttpOnly(true);
+//        c.setHttpOnly(true); or c.setPath("; HttpOnly;");
         respone.addCookie(c);
         return uid;
     }
+
 }

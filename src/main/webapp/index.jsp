@@ -1,3 +1,4 @@
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="org.springframework.security.crypto.bcrypt.*" %>
 <%@ page import="java.nio.file.*" %>
 <%@ page import="java.util.*" %>
@@ -5,30 +6,22 @@
 
 <%
 NoteManager manager = new NoteManager();
+manager.processLoginRequest(request, response, "sha1");
+manager.appendNote(request);
 
 PasswdVerification pv = new PasswdVerification();
+pageContext.setAttribute("notes", manager.getLines());
 
-
-pv.isValidByHash("username", "passwod");
-
-manager.processLoginRequest(request, response);
-String strong_salt = BCrypt.gensalt(4);
-String passwd = "dupaBlada";
-String hash = BCrypt.hashpw(passwd, strong_salt);
-
-
-
-Path path = FileSystems.getDefault().getPath( "C:\\_projects\\security\\data.txt");
-List<String> lista = Files.readAllLines(path);
-
-manager.appendNote(request);
 %>
 
 <html>
 <body>
 <h2>Hello World!</h2>
+<form method="get" action="search.jsp">
+Search box: <input type="text" value="Search..." name="q"> <input type="submit" value="go">
+</form>
+<br/>
 <%= manager.renderLoggedUserHeader(request) %><br/>
-
 
 
 <form method="post">
@@ -37,7 +30,11 @@ manager.appendNote(request);
 </form>
 
 <ul>
-    <%= manager.getContent() %>
+    <c:forEach items="${notes}" var="note">
+        <li>
+            ${note}
+        </li>
+    </c:forEach>
 </ul>
 <br/>
 <br/>
